@@ -9,12 +9,97 @@
          by default the socket.io nodejs library will host the client library
          online at your node.js address under /socket.io/socket.io.js 
          You can disable that on the server if desired
-    -->
+	-->
+	<script src="/socket.io/socket.io.js"></script>
+	<script type="text/babel">
+		const connectSocket = (e) => {
+			const chat = document.querySelector("#chat");
+			const send = document.querySelector("#send");
+
+			const socket = io.connect();
+
+			let user = "";
+
+			send.addEventListener('click', (e) => {
+				const message = document.querySelector("#message").value;
+
+				if(!message){
+					console.log("This kid doesn't even know how to use a chat box");
+					return;
+				}else if(message === "/help"){
+					chat.value = `Known commands:\n/dance\n/rollDie\n/listUsers\n${chat.value}`;
+				}
+
+				socket.emit('msg', {name: user, msg: message});
+				document.querySelector("#message").value = "";
+			});
+			document.querySelector('#myButton').addEventListener('click', (e) => {
+				socket.disconnect();
+			})
+			socket.on('userMsg', (data) => {
+				chat.value = `${data.name}: ${data.msg}\n${chat.value}`;
+			});
+			socket.on('bustMove', (data) => {
+				chat.value = `${data.name} has just busted a serious move\n${chat.value}`;
+			});
+			socket.on('rollDie', (data) => {
+				chat.value = `${data.name} has just rolled a die with a value of ${data.number}\n${chat.value}`;
+			});
+			socket.on('list', (data) => {
+				chat.value = `${data.peeps}\n${chat.value}`;
+			});
+			socket.on('announce', (data) => {
+				chat.value = `${data.msg}\n${chat.value}`;
+			});
+			socket.on('disconnect', () => {
+				chat.value = `You have disconnected from the server.\n${chat.value}`;
+			});
+			socket.on('connect', () => {
+				console.log('connecting');
+				user = document.querySelector('#username').value;
+
+				if(!user){
+					user = 'unkown';
+				}
+				socket.emit('join', {name: user});
+			});
+
+			socket.on('msg', (data) => {
+				console.log(data);
+				chat.value = `${data.name} has joined the server\nThere are ${data.count} users online.\n${chat.value}`;
+			})
+		};
+		const doTheSend = (e) => {
+			let myMessage = document.getElementById("message").value;
+
+			
+		}
+		const init = () => {
+			const connect = document.querySelector("#connect");
+			let message = document.querySelector('#chat');
+			message.value = "Type /help for useful commands";
+			
+			connect.addEventListener('click', connectSocket);
+			
+		};
+		window.onload = init;
+	</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
 	<style>
 		textarea {
 			display: block;
 			background-color: #EEEEEE;
+		}
+		#myButton{
+			background-color: red;
+			width: 50%;
+			height: 200px;
+			font-size: 3em;
+			transform: rotate(3deg);
+			color: white;
+		}
+		#myButton:hover{
+			cursor: pointer;
 		}
 	</style>
 </head>
@@ -28,5 +113,7 @@
 	<input id="send" type="button" value="send" />
 	
 	<textarea id="chat" rows="20" cols="40" readonly> </textarea>
+	<button id="myButton">DISCONNECT ME
+	</button>
 </body>
 </html>
